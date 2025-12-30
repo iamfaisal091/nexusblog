@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Blog | Premium Edition</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        header {
+            height: 80px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .logo { 
+            font-size: 24px; font-weight: 800; color: var(--primary);
+            text-decoration: none; letter-spacing: -1px;
+        }
+
+        #searchInput {
+            width: 300px; padding: 10px 15px; border-radius: 12px;
+            border: 1px solid #e2e8f0; outline: none;
+        }
+
+        main {
+            margin-top: 100px;
+            padding: 20px 5%;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .blog-card {
+            background: white; border-radius: 20px; padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer;
+            transition: 0.3s; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .blog-card:hover { transform: translateY(-5px); }
+
+        .full-post {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 900px;
+            margin: auto;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .full-post h1 {
+            font-size: clamp(28px, 5vw, 42px);
+            line-height: 1.2;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+        }
+
+        .full-post .content {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #334155;
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .back-btn {
+            display: inline-block; margin-bottom: 20px;
+            color: var(--primary); font-weight: 700; text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .full-post { padding: 20px; }
+            header { padding: 0 15px; }
+            #searchInput { width: 150px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="#" class="logo">NEXUS</a>
+    <input type="text" id="searchInput" placeholder="Search...">
+</header>
+
+<main>
+    <div id="viewContainer"></div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA1gnwY8WzLbbAX2ROsJ7gJXrNOZEiecpE",
+        authDomain: "blogtestenviroment.firebaseapp.com",
+        projectId: "blogtestenviroment",
+        storageBucket: "blogtestenviroment.firebasestorage.app",
+        messagingSenderId: "26504116566",
+        appId: "1:26504116566:web:63ca512dac2126a6b1fef7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const viewContainer = document.getElementById("viewContainer");
+
+    let allData = [];
+
+    onSnapshot(query(collection(db, "blogs"), orderBy("time", "desc")), (snap) => {
+        allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        handleRoute();
+    });
+
+    function handleRoute() {
+        const id = window.location.hash.substring(1);
+        if (id) renderDetail(id);
+        else renderList(allData);
+    }
+
+    function renderList(data) {
+        viewContainer.innerHTML = `<div class="blog-grid" id="grid"></div>`;
+        const grid = document.getElementById("grid");
+        data.forEach(b => {
+            const card = document.createElement("div");
+            card.className = "blog-card";
+            card.onclick = () => window.location.hash = b.id;
+            card.innerHTML = `
+                <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:10px;">BLOG</div>
+                <h2 style="margin:0 0 10px 0;">${b.title}</h2>
+                <div style="font-size:14px; color:var(--text-muted); overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">
+                    ${b.content}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function renderDetail(id) {
+        const b = allData.find(x => x.id === id);
+        if(!b) return;
+        viewContainer.innerHTML = `
+            <div class="full-post">
+                <a href="#" class="back-btn">← Back to Home</a>
+                <h1>${b.title}</h1>
+                <div style="font-size:14px; color:gray; margin-bottom:20px;">By ${b.author || 'Admin'}</div>
+                <div class="content">${b.content}</div>
+            </div>
+        `;
+        window.scrollTo(0,0);
+    }
+
+    window.onhashchange = handleRoute;
+
+    document.getElementById("searchInput").oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = allData.filter(x => x.title.toLowerCase().includes(val));
+        renderList(filtered);
+    };
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log("PWA Registered", reg))
+        .catch(err => console.log("PWA Error", err));
+    });
+  }
+</script>
+
+</body>
+</html>
