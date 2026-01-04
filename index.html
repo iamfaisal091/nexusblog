@@ -1,134 +1,210 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Blog | Premium Edition</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexus | Ultimate Social Blog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Flaticon CDN Icon -->
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         :root {
-            --primary: #6366f1;
-            --bg: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --bg: #ffffff; --card-bg: #f5f5f7; --text: #1d1d1f; --muted: #86868b;
+            --accent: #0071e3; --border: rgba(0,0,0,0.08); --error: #ff3b30;
+        }
+        [data-theme="dark"] {
+            --bg: #000000; --card-bg: #1c1c1e; --text: #f5f5f7; --muted: #8e8e93; --border: rgba(255,255,255,0.12);
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            color: var(--text-main);
-        }
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); 
+               overflow-x: hidden; scroll-behavior: smooth; line-height: 1.6; }
 
-        header {
-            height: 80px;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 5%;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-sizing: border-box;
+        header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); 
+            z-index: 1000; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 6%; border-bottom: 1px solid var(--border);
         }
+        [data-theme="dark"] header { background: rgba(0,0,0,0.92); }
 
-        .logo { 
-            font-size: 24px; font-weight: 800; color: var(--primary);
-            text-decoration: none; letter-spacing: -1px;
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; z-index: 1001; }
+        #offlineBanner { position: fixed; top: 70px; width: 100%; background: var(--error); color: white; text-align: center; padding: 10px; font-size: 14px; display: none; z-index: 999; }
+
+        /* Full screen + scrollable Sidebar */
+        #sidebar {
+            position: fixed; inset: 0; left: -100%; width: 100%; max-width: 380px;
+            background: var(--bg); z-index: 2000; transition: left 0.45s cubic-bezier(0.4,0,0.2,1);
+            overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 90px 28px 60px;
+            border-right: 1px solid var(--border);
         }
+        #sidebar.active { left: 0; }
+        .sidebar-header { position: absolute; top: 0; left: 0; right: 0; padding: 24px 28px; background: var(--bg); border-bottom: 1px solid var(--border); z-index: 10; }
+        .menu-item { padding: 16px 0; font-size: 17px; cursor: pointer; }
+        .menu-item:hover { color: var(--accent); }
+        .menu-item.logout { color: var(--error); font-weight: 700; margin-top: 50px; padding-top: 25px; border-top: 1px solid var(--border); }
 
-        #searchInput {
-            width: 300px; padding: 10px 15px; border-radius: 12px;
-            border: 1px solid #e2e8f0; outline: none;
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; z-index: 1999; }
+
+        .search-container { max-width: 680px; margin: 100px auto 40px; padding: 0 20px; }
+        #searchBox { width: 100%; padding: 16px 28px; border-radius: 50px; border: 1.5px solid var(--border); background: var(--card-bg); color: var(--text); outline: none; font-size: 16px; }
+
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .skeleton { height: 340px; background: linear-gradient(90deg, var(--card-bg) 0%, #e0e0e0 50%, var(--card-bg) 100%); background-size: 200% 100%; animation: skeletonLoading 1.6s infinite; border-radius: 24px; }
+        @keyframes skeletonLoading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .blog-card { background: var(--card-bg); border-radius: 24px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; position: relative; }
+        .blog-card:hover { transform: translateY(-8px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+        .thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; cursor: zoom-in; }
+
+        .card-info { padding: 20px; }
+        .like-count { color: var(--muted); font-size: 14px; margin-top: 8px; }
+        .dots-trigger { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.8); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; z-index: 10; border: none; }
+        [data-theme="dark"] .dots-trigger { background: rgba(0,0,0,0.8); }
+
+        .error-state, .empty-state { text-align: center; padding: 160px 20px; font-size: 18px; }
+        .retry-btn { background: var(--accent); color: white; border: none; padding: 14px 36px; border-radius: 50px; font-weight: 700; cursor: pointer; margin-top: 24px; }
+
+        /* Lightbox */
+        #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.96); display: none; align-items: center; justify-content: center; z-index: 9999; cursor: zoom-out; }
+        #lightbox.active { display: flex; }
+        #lightbox img { max-width: 94%; max-height: 94vh; border-radius: 12px; box-shadow: 0 0 50px rgba(255,255,255,0.15); }
+
+        /* Action Sheet */
+        #actionSheet { position: fixed; bottom: -100%; left: 0; width: 100%; background: var(--bg); z-index: 3000; border-radius: 32px 32px 0 0; padding: 35px 25px; transition: bottom 0.4s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 -10px 40px rgba(0,0,0,0.3); }
+        #actionSheet.active { bottom: 0; }
+        .sheet-btn { width: 100%; padding: 18px; margin: 8px 0; border-radius: 18px; border: none; background: var(--card-bg); color: var(--text); font-size: 17px; font-weight: 700; cursor: pointer; text-align: left; }
+
+        /* Scroll to Top */
+        #scrollTopBtn {
+            position: fixed; bottom: 32px; right: 32px; width: 56px; height: 56px;
+            background: var(--accent); color: white; border: none; border-radius: 50%;
+            font-size: 26px; cursor: pointer; opacity: 0; visibility: hidden;
+            transition: all 0.4s; box-shadow: 0 6px 20px rgba(0,0,0,0.25); z-index: 998;
         }
+        #scrollTopBtn.visible { opacity: 1; visibility: visible; }
+        #scrollTopBtn:hover { transform: scale(1.12); }
 
-        main {
-            margin-top: 100px;
-            padding: 20px 5%;
-            max-width: 1100px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+        .heart-pop { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 120px; color: var(--error); pointer-events: none; opacity: 0; z-index: 9999; }
+        .animate-heart { animation: heartPop 0.9s ease-out; }
+        @keyframes heartPop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); } }
 
-        .blog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
-        }
+        /* Post UI */
+        .full-post { max-width: 920px; margin: 0 auto; padding: 80px 24px 120px; }
+        .content-body { font-size: 19px; line-height: 1.8; }
+        .back-btn { background: none; border: none; color: var(--accent); font-weight: 800; font-size: 18px; cursor: pointer; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
 
-        .blog-card {
-            background: white; border-radius: 20px; padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer;
-            transition: 0.3s; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: center;
-        }
+        /* Toast */
+        #toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #1d1d1f; color: white; padding: 14px 28px; border-radius: 50px; font-size: 15px; z-index: 5000; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        /* Shimmer Animation */
+.skeleton-card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    overflow: hidden;
+    height: 320px;
+    position: relative;
+}
 
-        .blog-card:hover { transform: translateY(-5px); }
+.shimmer {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.2) 50%, 
+        rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmerMove 1.5s infinite;
+}
 
-        .full-post {
-            background: white;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            max-width: 900px;
-            margin: auto;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
+[data-theme="dark"] .shimmer {
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.05) 50%, 
+        rgba(255,255,255,0) 100%);
+}
 
-        .full-post h1 {
-            font-size: clamp(28px, 5vw, 42px);
-            line-height: 1.2;
-            margin-bottom: 20px;
-            word-wrap: break-word;
-        }
+@keyframes shimmerMove {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
 
-        .full-post .content {
-            font-size: 18px;
-            line-height: 1.8;
-            color: #334155;
-            white-space: pre-wrap; 
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-
-        .back-btn {
-            display: inline-block; margin-bottom: 20px;
-            color: var(--primary); font-weight: 700; text-decoration: none;
-        }
-
-        @media (max-width: 600px) {
-            .full-post { padding: 20px; }
-            header { padding: 0 15px; }
-            #searchInput { width: 150px; }
-        }
     </style>
 </head>
 <body>
 
+<div id="progress"></div>
+<div id="offlineBanner">You are offline. Check connection.</div>
+<div class="heart-pop" id="heart">❤️</div>
+<div class="overlay" id="overlay" onclick="window.toggleSidebar()"></div>
+
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0, behavior:'smooth'})">↑</button>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="document.getElementById('lightbox').classList.remove('active')">
+    <img id="lightboxImg" src="" alt="Enlarged image">
+</div>
+
+
+<!-- Action Sheet -->
+<div id="actionSheet">
+    <div style="width: 50px; height: 6px; background: var(--border); margin: -15px auto 25px; border-radius: 10px;"></div>
+    <button class="sheet-btn" id="favActionBtn" onclick="window.saveToFav()">⭐ Add to Favorites</button>
+    <button class="sheet-btn" onclick="window.sharePost()">🔗 Share Post</button>
+    <button class="sheet-btn" onclick="window.toggleActionSheet()" style="background:none; text-align:center; color: var(--muted);">Cancel</button>
+</div>
+
 <header>
-    <a href="#" class="logo">NEXUS</a>
-    <input type="text" id="searchInput" placeholder="Search...">
+    <div onclick="window.toggleSidebar()" style="font-size:32px; cursor:pointer;">☰</div>
+    <div style="font-weight:900; font-size:28px; cursor:pointer;" onclick="location.hash=''">NEXUS</div>
+    <div id="loginBtn" style="cursor:pointer;">
+        <img id="userPfp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:48px;height:48px;border-radius:50%;border:2px solid var(--accent);">
+    </div>
 </header>
 
+<aside id="sidebar">
+    <div class="sidebar-header">
+        <h2 style="margin:0;font-weight:900;">Settings</h2>
+    </div>
+    <div style="margin-top:30px;">
+        <div class="menu-item" onclick="location.hash='';window.toggleSidebar()">Home</div>
+        <div class="menu-item" onclick="window.showFavorites()">Favorites</div>
+        <div class="menu-item" onclick="window.toggleTheme()">Toggle Dark Mode</div>
+        <div class="menu-item" onclick="location.reload()">Refresh</div>
+        <div class="menu-item">About</div>
+        <div class="menu-item">Contact</div>
+        <div class="menu-item">Feedback</div>
+        <div class="menu-item">Write Post</div>
+        <div class="menu-item">Disclaimer</div>
+        <div class="menu-item">Privacy Policy</div>
+        <div id="logoutBtn" class="menu-item logout" style="display:none;" onclick="window.logoutUser()">Logout</div>
+        <div id="authStatus" style="font-size:14px;color:var(--muted);margin-top:50px;">Not Logged In</div>
+    </div>
+</aside>
+
 <main>
-    <div id="viewContainer"></div>
+    <div class="search-container" id="searchArea">
+        <input type="text" id="searchBox" placeholder="Search blog titles...">
+    </div>
+    <div id="viewContainer">
+        <div class="blog-grid">
+            <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+        </div>
+    </div>
 </main>
 
+<div id="toast"></div>
+
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, query, orderBy, limit, setDoc, increment, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA1gnwY8WzLbbAX2ROsJ7gJXrNOZEiecpE",
@@ -141,70 +217,186 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const viewContainer = document.getElementById("viewContainer");
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    
+    let currentUser = null;
+    let currentPostData = null;
+    let gridCache = null; 
+    const CACHE_EXPIRY = 300000; // 5 Minutes
 
-    let allData = [];
+    // --- Helper: Offline Cache Engine ---
+    const cacheManager = {
+        save: (key, data) => localStorage.setItem(key, JSON.stringify({ val: data, time: Date.now() })),
+        get: (key) => {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const item = JSON.parse(raw);
+            return (Date.now() - item.time < CACHE_EXPIRY) ? item.val : null;
+        }
+    };
 
-    onSnapshot(query(collection(db, "blogs"), orderBy("time", "desc")), (snap) => {
-        allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        handleRoute();
-    });
+    // --- Navigation & Sidebar Functions ---
+    window.toggleSidebar = () => {
+        const sb = document.getElementById("sidebar");
+        const active = sb.classList.toggle("active");
+        document.getElementById("overlay").style.display = active ? "block" : "none";
+    };
 
-    function handleRoute() {
-        const id = window.location.hash.substring(1);
-        if (id) renderDetail(id);
-        else renderList(allData);
+    window.goHome = () => {
+        if (location.hash === "") fetchList(); 
+        else location.hash = "";
+        if(document.getElementById("sidebar").classList.contains("active")) window.toggleSidebar();
+    };
+
+    window.toggleActionSheet = () => document.getElementById("actionSheet").classList.toggle("active");
+
+    // --- Bandwidth Optimized Fetchers ---
+    async function fetchList() {
+        setProgress(30);
+        document.getElementById("searchArea").style.display = "block";
+        
+        // Strategy: Memory -> Disk Cache -> Network (Saves 100% Reads on repeat visits)
+        let posts = gridCache || cacheManager.get('home_grid');
+
+        if (!posts) {
+            try {
+                const q = query(collection(db, "blog_meta"), orderBy("time", "desc"), limit(12));
+                const snap = await getDocs(q);
+                posts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                cacheManager.save('home_grid', posts);
+                gridCache = posts;
+            } catch (e) {
+                posts = cacheManager.get('home_grid') || [];
+                showToast("Working Offline 📶");
+            }
+        }
+        
+        renderGrid(posts);
+        setProgress(100); setTimeout(() => setProgress(0), 400);
     }
 
-    function renderList(data) {
-        viewContainer.innerHTML = `<div class="blog-grid" id="grid"></div>`;
-        const grid = document.getElementById("grid");
-        data.forEach(b => {
-            const card = document.createElement("div");
-            card.className = "blog-card";
-            card.onclick = () => window.location.hash = b.id;
-            card.innerHTML = `
-                <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:10px;">BLOG</div>
-                <h2 style="margin:0 0 10px 0;">${b.title}</h2>
-                <div style="font-size:14px; color:var(--text-muted); overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">
-                    ${b.content}
-                </div>
-            `;
-            grid.appendChild(card);
+    async function fetchFull(id) {
+        setProgress(30);
+        document.getElementById("searchArea").style.display = "none";
+        
+        let post = cacheManager.get(`p_full_${id}`);
+
+        if (!post) {
+            try {
+                const meta = await getDoc(doc(db, "blog_meta", id));
+                if (!meta.exists()) throw new Error("404");
+                const content = await getDoc(doc(db, "blog_content", id));
+                post = { ...meta.data(), ...content.data(), id };
+                cacheManager.save(`p_full_${id}`, post);
+            } catch (e) {
+                document.getElementById("viewContainer").innerHTML = `
+                    <div class="error-state">
+                        <h2>⚠️ Post Not Found</h2>
+                        <p>The post may have been deleted.</p>
+                        <button class="retry-btn" onclick="window.goHome()">Back to Home</button>
+                    </div>`;
+                setProgress(0); return;
+            }
+        }
+
+        currentPostData = post;
+        renderFullPost(post);
+        setProgress(100); setTimeout(() => setProgress(0), 400);
+    }
+
+    // --- Rendering Logic ---
+    function renderGrid(posts) {
+        let html = '<div class="blog-grid">';
+        posts.forEach(p => {
+            const safeTitle = (p.title || "Untitled").replace(/'/g, "\\'");
+            html += `
+                <div class="blog-card" onclick="location.hash='${p.id}'">
+                    <img src="${p.imageUrl || 'https://via.placeholder.com/400'}" class="thumb" loading="lazy">
+                    <button class="dots-trigger" onclick="event.stopPropagation(); window.openDots('${p.id}', '${safeTitle}', '${p.imageUrl}')">⋮</button>
+                    <div class="card-info">
+                        <h3>${p.title}</h3>
+                        <div class="like-count">❤️ ${p.likes || 0} Likes</div>
+                    </div>
+                </div>`;
+        });
+        document.getElementById("viewContainer").innerHTML = html + "</div>";
+    }
+
+    function renderFullPost(data) {
+        document.getElementById("viewContainer").innerHTML = `
+            <div class="full-post">
+                <button class="back-btn" onclick="window.goHome()">← Back Home</button>
+                <h1>${data.title}</h1>
+                <div class="content-body">${data.body || 'No content.'}</div>
+            </div>`;
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // --- Action Sheet Logic ---
+    window.openDots = (id, title, img) => {
+        currentPostData = { id, title, imageUrl: img };
+        const favs = JSON.parse(localStorage.getItem("nexus_favs") || "[]");
+        document.getElementById("favActionBtn").textContent = favs.some(f => f.id === id) ? "🗑️ Remove Favorite" : "⭐ Add to Favorites";
+        window.toggleActionSheet();
+    };
+
+    window.saveToFav = () => {
+        if (!currentPostData) return;
+        let favs = JSON.parse(localStorage.getItem("nexus_favs") || "[]");
+        const idx = favs.findIndex(f => f.id === currentPostData.id);
+        idx > -1 ? favs.splice(idx, 1) : favs.push(currentPostData);
+        localStorage.setItem("nexus_favs", JSON.stringify(favs));
+        showToast(idx > -1 ? "Removed" : "Saved to Favorites ⭐");
+        window.toggleActionSheet();
+    };
+
+    window.showFavorites = () => {
+        window.toggleSidebar();
+        const favs = JSON.parse(localStorage.getItem("nexus_favs") || "[]");
+        if (!favs.length) {
+            document.getElementById("viewContainer").innerHTML = `<div class="empty-state"><h2>No Favorites</h2><button class="retry-btn" onclick="window.goHome()">Go Home</button></div>`;
+        } else renderGrid(favs);
+    };
+
+    window.sharePost = () => {
+        const url = `${window.location.origin}${window.location.pathname}#${currentPostData.id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast("Link Copied! 🔗");
+            window.toggleActionSheet();
+        });
+    };
+
+    const setProgress = (p) => document.getElementById("progress").style.width = `${p}%`;
+    const showToast = (msg) => {
+        const t = document.getElementById("toast");
+        t.textContent = msg; t.style.display = "block";
+        setTimeout(() => t.style.display = "none", 2000);
+    };
+
+    // --- Initialization ---
+    onAuthStateChanged(auth, user => {
+        currentUser = user;
+        document.getElementById("userPfp").src = user?.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    });
+
+    window.onhashchange = () => {
+        const id = location.hash.substring(1);
+        id ? fetchFull(id) : fetchList();
+    };
+
+    const startId = location.hash.substring(1);
+    startId ? fetchFull(startId) : fetchList();
+
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log("PWA Registered", reg))
+                .catch(err => console.log("PWA Error", err));
         });
     }
-
-    function renderDetail(id) {
-        const b = allData.find(x => x.id === id);
-        if(!b) return;
-        viewContainer.innerHTML = `
-            <div class="full-post">
-                <a href="#" class="back-btn">← Back to Home</a>
-                <h1>${b.title}</h1>
-                <div style="font-size:14px; color:gray; margin-bottom:20px;">By ${b.author || 'Admin'}</div>
-                <div class="content">${b.content}</div>
-            </div>
-        `;
-        window.scrollTo(0,0);
-    }
-
-    window.onhashchange = handleRoute;
-
-    document.getElementById("searchInput").oninput = (e) => {
-        const val = e.target.value.toLowerCase();
-        const filtered = allData.filter(x => x.title.toLowerCase().includes(val));
-        renderList(filtered);
-    };
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log("PWA Registered", reg))
-        .catch(err => console.log("PWA Error", err));
-    });
-  }
 </script>
 
 </body>
